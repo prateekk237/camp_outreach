@@ -122,6 +122,25 @@ with st.expander("➕ Add New Doctor"):
             add_doctor(new_doc.strip())
             st.success(f"Doctor '{new_doc}' added successfully.")
             st.rerun()
+            
+with st.expander("🗑️ Delete Doctor"):
+    doctor_to_delete = st.selectbox(
+        "Select Doctor to Delete",
+        options=["Select"] + get_doctors(),
+        key="delete_doctor_select"
+    )
+
+    if st.button("Delete Doctor"):
+        if doctor_to_delete == "Select":
+            st.warning("Please select a doctor.")
+        elif is_doctor_used(doctor_to_delete):
+            st.error(
+                f"Doctor '{doctor_to_delete}' cannot be deleted because it is already used in camp records."
+            )
+        else:
+            delete_doctor(doctor_to_delete)
+            st.success(f"Doctor '{doctor_to_delete}' deleted successfully.")
+            st.rerun()
 
 optom = st.text_input("Optom Name")
 optom_intern = st.text_input("Optom Intern Name")
