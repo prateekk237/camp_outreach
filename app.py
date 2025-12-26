@@ -85,23 +85,23 @@ def add_doctor(name):
     conn.commit()
     conn.close()
 
-def save_entry(values):
+def save_entry(data_dict):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO camp_entries (
-            place, camp_date, administrator, doctor, optom, optom_intern,
-            opd_m, opd_f, opd_t,
-            surg_m, surg_f, surg_t,
-            hosp_m, hosp_f, hosp_t,
-            ciplox, ciplox_d, cmc, fedtive, glucose_strips,
-            spectacles, photo_name, created_at
-        ) VALUES (
-            ?,?,?,?,?,?,
-            ?,?,?, ?,?,?, ?,?,?, ?,?,?, ?,?,?,
-            ?,?,?
-        )
-    """, values)
+
+    # Get real columns from DB
+    cur.execute("PRAGMA table_info(camp_entries)")
+    db_columns = [row[1] for row in cur.fetchall() if row[1] != "id"]
+
+    # Align values to DB schema
+    values = [data_dict.get(col) for col in db_columns]
+
+    placeholders = ",".join(["?"] * len(values))
+    columns = ",".join(db_columns)
+
+    sql = f"INSERT INTO camp_entries ({columns}) VALUES ({placeholders})"
+    cur.execute(sql, values)
+
     conn.commit()
     conn.close()
 
@@ -219,15 +219,31 @@ if st.button("✅ Submit"):
         st.error("Brought to Hospital total cannot exceed Selected for Surgery total.")
         st.stop()
 
-    save_entry((
-        place, str(camp_date), administrator, doctor, optom, optom_intern,
-        opd_m, opd_f, opd_t,
-        surg_m, surg_f, surg_t,
-        hosp_m, hosp_f, hosp_t,
-        ciplox, ciplox_d, cmc, fedtive, glucose_strips,
-        spectacles, photo_name,
-        datetime.now().isoformat()
-    ))
+    save_entry({
+    "place": place,
+    "camp_date": str(camp_date),
+    "administrator": administrator,
+    "doctor": doctor,
+    "optom": optom,
+    "optom_intern": optom_intern,
+    "opd_m": opd_m,
+    "opd_f": opd_f,
+    "opd_t": opd_t,
+    "surg_m": surg_m,
+    "surg_f": surg_f,
+    "surg_t": surg_t,
+    "hosp_m": hosp_m,
+    "hosp_f": hosp_f,
+    "hosp_t": hosp_t,
+    "ciplox": ciplox,
+    "ciplox_d": ciplox_d,
+    "cmc": cmc,
+    "fedtive": fedtive,
+    "glucose_strips": glucose_strips,
+    "spectacles": spectacles,
+    "photo_name": photo_name,
+    "created_at": datetime.now().isoformat()
+})
 
     st.success("Outreach camp data saved successfully.")
 
