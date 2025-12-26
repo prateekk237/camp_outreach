@@ -82,9 +82,16 @@ def save_entry(values):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO camp_entries VALUES (
-            NULL,?,?,?,?,?,?,
-            ?,?,?, ?,?,?, ?,?,?, ?,?,?, ?,?,?,?,?
+        INSERT INTO camp_entries (
+            place, camp_date, administrator, doctor, optom, optom_intern,
+            opd_m, opd_f, opd_t,
+            surg_m, surg_f, surg_t,
+            hosp_m, hosp_f, hosp_t,
+            ciplox, ciplox_d, cmc, fedtive,
+            spectacles, created_at
+        ) VALUES (
+            ?,?,?,?,?,?,
+            ?,?,?, ?,?,?, ?,?,?, ?,?,?, ?,?,?
         )
     """, values)
     conn.commit()
