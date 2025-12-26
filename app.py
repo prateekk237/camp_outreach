@@ -20,6 +20,24 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 # --------------------------------------------------
 def get_connection():
     return sqlite3.connect(DB_PATH, check_same_thread=False)
+def is_doctor_used(doctor_name):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT COUNT(*) FROM camp_entries WHERE doctor = ?",
+        (doctor_name,)
+    )
+    count = cur.fetchone()[0]
+    conn.close()
+    return count > 0
+
+
+def delete_doctor(name):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM doctors WHERE name = ?", (name,))
+    conn.commit()
+    conn.close()
 
 def init_db():
     conn = get_connection()
