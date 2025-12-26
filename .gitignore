@@ -1,6 +1,6 @@
 # SQLite database (runtime only)
 outreach.db
-
+uploaded_images/
 # Python cache
 __pycache__/
 *.pyc
