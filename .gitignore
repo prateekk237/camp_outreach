@@ -1,0 +1,13 @@
+# SQLite database (runtime only)
+outreach.db
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Streamlit cache
+.streamlit/
+
+# OS files
+.DS_Store
+Thumbs.db
