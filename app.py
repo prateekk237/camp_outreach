@@ -3,8 +3,8 @@ import sqlite3
 import pandas as pd
 from datetime import date, datetime
 import os
-import base64
-from pathlib import Path
+from io import BytesIO
+import zipfile
 
 # --------------------------------------------------
 # PAGE CONFIG
@@ -97,22 +97,6 @@ def load_all_entries():
     df = pd.read_sql("SELECT * FROM camp_entries", conn)
     conn.close()
     return df
-
-# --------------------------------------------------
-# IMAGE LINK (DATA URL)
-# --------------------------------------------------
-def image_to_data_url(filename):
-    if not filename:
-        return ""
-    path = Path(IMAGE_DIR) / filename
-    if not path.exists():
-        return ""
-
-    with open(path, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode()
-
-    ext = path.suffix.replace(".", "").lower()
-    return f"data:image/{ext};base64,{encoded}"
 
 # --------------------------------------------------
 # INIT
@@ -227,21 +211,34 @@ if st.button("✅ Submit"):
     st.success("Data saved successfully.")
 
 # --------------------------------------------------
-# VIEW + EXPORT
+# ZIP EXPORT
 # --------------------------------------------------
 st.divider()
-st.subheader("📋 Saved Records")
+st.subheader("📦 Export Data (CSV + Images)")
 
-df = load_all_entries()
+df = load_all_entries().drop(columns=["id"], errors="ignore")
+
 if not df.empty:
-    df["photo_download_link"] = df["photo_name"].apply(image_to_data_url)
+    buffer = BytesIO()
 
-    st.dataframe(df.drop(columns=["id"], errors="ignore"), use_container_width=True)
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+        zipf.writestr("outreach_data.csv", df.to_csv(index=False))
+
+        for name in df["photo_name"].dropna().unique():
+            img_path = os.path.join(IMAGE_DIR, name)
+            if os.path.exists(img_path):
+                zipf.write(img_path, arcname=f"images/{name}")
+
+    buffer.seek(0)
 
     safe_place = place.replace(" ", "_") if place else "camp"
-    filename = f"{camp_date}_{safe_place}.csv"
+    zip_name = f"{camp_date}_{safe_place}.zip"
 
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download CSV", csv, filename, "text/csv")
+    st.download_button(
+        "Download ZIP (CSV + Images)",
+        buffer,
+        zip_name,
+        "application/zip"
+    )
 else:
     st.info("No records available yet.")
