@@ -9,7 +9,7 @@ import zipfile
 # --------------------------------------------------
 # PAGE CONFIG
 # --------------------------------------------------
-st.set_page_config(page_title="Outreach Camp Data Entry", layout="centered")
+st.set_page_config(page_title="NPCBVI SRHU EYE CAMP REPORT", layout="centered")
 
 DB_PATH = "outreach.db"
 IMAGE_DIR = "uploaded_images"
@@ -139,7 +139,7 @@ if "last_submission" not in st.session_state:
 # --------------------------------------------------
 # UI START
 # --------------------------------------------------
-st.title("🩺 Outreach Camp Data Entry")
+st.title("🩺 NPCBVI SRHU EYE CAMP REPORT")
 
 # ---------------- CAMP DETAILS ----------------
 st.subheader("Camp Details")
