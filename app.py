@@ -14,7 +14,7 @@ st.set_page_config(
 DB_PATH = "outreach.db"
 
 # --------------------------------------------------
-# DATABASE FUNCTIONS
+# DATABASE
 # --------------------------------------------------
 def get_connection():
     return sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -33,12 +33,12 @@ def init_db():
     cur.execute("""
         CREATE TABLE IF NOT EXISTS camp_entries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            place TEXT NOT NULL,
-            camp_date TEXT NOT NULL,
-            administrator TEXT NOT NULL,
-            doctor TEXT NOT NULL,
-            optom TEXT NOT NULL,
-            optom_intern TEXT NOT NULL,
+            place TEXT,
+            camp_date TEXT,
+            administrator TEXT,
+            doctor TEXT,
+            optom TEXT,
+            optom_intern TEXT,
 
             opd_m INTEGER,
             opd_f INTEGER,
@@ -56,8 +56,10 @@ def init_db():
             ciplox_d INTEGER,
             cmc INTEGER,
             fedtive INTEGER,
+            glucose_strips INTEGER,
 
             spectacles INTEGER,
+            photo_name TEXT,
             created_at TEXT
         )
     """)
@@ -87,11 +89,12 @@ def save_entry(values):
             opd_m, opd_f, opd_t,
             surg_m, surg_f, surg_t,
             hosp_m, hosp_f, hosp_t,
-            ciplox, ciplox_d, cmc, fedtive,
-            spectacles, created_at
+            ciplox, ciplox_d, cmc, fedtive, glucose_strips,
+            spectacles, photo_name, created_at
         ) VALUES (
             ?,?,?,?,?,?,
-            ?,?,?, ?,?,?, ?,?,?, ?,?,?, ?,?,?
+            ?,?,?, ?,?,?, ?,?,?, ?,?,?, ?,?,
+            ?,?,?
         )
     """, values)
     conn.commit()
@@ -104,7 +107,7 @@ def load_all_entries():
     return df
 
 # --------------------------------------------------
-# INITIALIZE DATABASE
+# INIT
 # --------------------------------------------------
 init_db()
 
@@ -126,7 +129,7 @@ with st.expander("➕ Add New Doctor"):
     if st.button("Add Doctor"):
         if new_doctor.strip():
             add_doctor(new_doctor.strip())
-            st.success("Doctor added")
+            st.success(f"Doctor '{new_doctor}' added successfully.")
             st.rerun()
 
 optom = st.text_input("Optom Name")
@@ -161,9 +164,37 @@ ciplox = c1.number_input("Ciplox", min_value=0)
 ciplox_d = c2.number_input("Ciplox D", min_value=0)
 cmc = c1.number_input("CMC", min_value=0)
 fedtive = c2.number_input("Fedtive", min_value=0)
+glucose_strips = c1.number_input("Glucose Strips", min_value=0)
 
 st.divider()
 spectacles = st.number_input("Spectacles Given", min_value=0)
+
+st.subheader("Camp Photo (Optional)")
+photo = st.file_uploader(
+    "Upload Camp Photo (Geo-tagged if available)",
+    type=["jpg", "jpeg", "png"]
+)
+photo_name = photo.name if photo else None
+
+# --------------------------------------------------
+# PREVIEW
+# --------------------------------------------------
+st.divider()
+st.subheader("🔍 Preview Submission")
+
+preview_df = pd.DataFrame([{
+    "Place": place,
+    "Camp Date": camp_date,
+    "Doctor": doctor,
+    "OPD Total": opd_t,
+    "Surgery Total": surg_t,
+    "Hospital Total": hosp_t,
+    "Glucose Strips": glucose_strips,
+    "Spectacles": spectacles,
+    "Photo": photo_name
+}])
+
+st.dataframe(preview_df, use_container_width=True)
 
 # --------------------------------------------------
 # SUBMIT
@@ -177,37 +208,46 @@ if st.button("✅ Submit"):
         doctor != "Select"
     ]):
         st.error("All fields are mandatory.")
-    else:
-        save_entry((
-            place,
-            str(camp_date),
-            administrator,
-            doctor,
-            optom,
-            optom_intern,
-            opd_m, opd_f, opd_t,
-            surg_m, surg_f, surg_t,
-            hosp_m, hosp_f, hosp_t,
-            ciplox, ciplox_d, cmc, fedtive,
-            spectacles,
-            datetime.now().isoformat()
-        ))
-        st.success("Data saved successfully.")
+        st.stop()
+
+    if hosp_t > surg_t:
+        st.error("Brought to Hospital total cannot exceed Selected for Surgery total.")
+        st.stop()
+
+    save_entry((
+        place, str(camp_date), administrator, doctor, optom, optom_intern,
+        opd_m, opd_f, opd_t,
+        surg_m, surg_f, surg_t,
+        hosp_m, hosp_f, hosp_t,
+        ciplox, ciplox_d, cmc, fedtive, glucose_strips,
+        spectacles, photo_name,
+        datetime.now().isoformat()
+    ))
+
+    st.success("Outreach camp data saved successfully.")
 
 # --------------------------------------------------
-# EXPORT
+# VIEW + EXPORT
 # --------------------------------------------------
 st.divider()
-st.subheader("📤 Export Data")
+st.subheader("📋 Saved Records")
 
 df = load_all_entries()
-if not df.empty:
+df = df.drop(columns=["id"], errors="ignore")
+
+if df.empty:
+    st.info("No records available yet.")
+else:
+    with st.expander("View Saved Data"):
+        st.dataframe(df, use_container_width=True, hide_index=True)
+
+    safe_place = place.replace(" ", "_") if place else "camp"
+    filename = f"{camp_date}_{safe_place}.csv"
+
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
         "Download CSV",
         csv,
-        "outreach_camp_data.csv",
+        filename,
         "text/csv"
     )
-else:
-    st.info("No records available yet.")
