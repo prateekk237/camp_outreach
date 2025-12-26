@@ -23,6 +23,7 @@ def init_db():
     conn = get_connection()
     cur = conn.cursor()
 
+    # Doctors table
     cur.execute("""
         CREATE TABLE IF NOT EXISTS doctors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,6 +31,7 @@ def init_db():
         )
     """)
 
+    # Camp entries base table
     cur.execute("""
         CREATE TABLE IF NOT EXISTS camp_entries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,30 +41,33 @@ def init_db():
             doctor TEXT,
             optom TEXT,
             optom_intern TEXT,
-
             opd_m INTEGER,
             opd_f INTEGER,
             opd_t INTEGER,
-
             surg_m INTEGER,
             surg_f INTEGER,
             surg_t INTEGER,
-
             hosp_m INTEGER,
             hosp_f INTEGER,
             hosp_t INTEGER,
-
             ciplox INTEGER,
             ciplox_d INTEGER,
             cmc INTEGER,
             fedtive INTEGER,
-            glucose_strips INTEGER,
-
             spectacles INTEGER,
-            photo_name TEXT,
             created_at TEXT
         )
     """)
+
+    # ---- SCHEMA MIGRATION (SAFE) ----
+    cur.execute("PRAGMA table_info(camp_entries)")
+    existing_cols = {row[1] for row in cur.fetchall()}
+
+    if "glucose_strips" not in existing_cols:
+        cur.execute("ALTER TABLE camp_entries ADD COLUMN glucose_strips INTEGER DEFAULT 0")
+
+    if "photo_name" not in existing_cols:
+        cur.execute("ALTER TABLE camp_entries ADD COLUMN photo_name TEXT")
 
     conn.commit()
     conn.close()
