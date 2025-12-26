@@ -120,7 +120,7 @@ with st.expander("➕ Add New Doctor"):
         if new_doctor.strip():
             add_doctor(new_doctor.strip())
             st.success("Doctor added")
-            st.experimental_rerun()
+            st.rerun()
 
 optom = st.text_input("Optom Name")
 optom_intern = st.text_input("Optom Intern Name")
