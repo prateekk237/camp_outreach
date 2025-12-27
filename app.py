@@ -287,6 +287,9 @@ if st.session_state.last_submission:
 
 # ---------------- ZIP EXPORT ---------------
 
+import streamlit.components.v1 as components
+import base64
+
 st.divider()
 st.subheader("📤 Share Camp Data")
 
@@ -340,12 +343,12 @@ else:
                 }} catch (e) {{
                     alert("Error sharing file.");
                 }}
-            });
+            }});
             </script>
         </body>
         </html>
         """,
-        height=80
+        height=90
     )
 
     st.caption(
