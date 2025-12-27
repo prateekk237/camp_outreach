@@ -5,7 +5,7 @@ from datetime import date, datetime
 import os
 from io import BytesIO
 import zipfile
-
+import base64
 # --------------------------------------------------
 # PAGE CONFIG
 # --------------------------------------------------
@@ -285,9 +285,10 @@ if st.session_state.last_submission:
         use_container_width=True
     )
 
-# ---------------- ZIP EXPORT ----------------
+# ---------------- ZIP EXPORT ---------------
+
 st.divider()
-st.subheader("📤 Share Camp Data (CSV)")
+st.subheader("📤 Share Camp Data")
 
 df = load_all_entries().drop(columns=["id"], errors="ignore")
 
@@ -297,15 +298,48 @@ else:
     safe_place = place.replace(" ", "_") if place else "camp"
     filename = f"{camp_date}_{safe_place}.csv"
 
-    csv_bytes = df.to_csv(index=False).encode("utf-8")
+    csv_data = df.to_csv(index=False)
+    b64 = base64.b64encode(csv_data.encode()).decode()
 
-    st.download_button(
-        label="📄 Download / Share CSV",
-        data=csv_bytes,
-        file_name=filename,
-        mime="text/csv"
-    )
+    st.markdown(
+        f"""
+        <button id="shareBtn" style="
+            padding:10px 16px;
+            background:#0f9d58;
+            color:white;
+            border:none;
+            border-radius:6px;
+            font-size:16px;
+        ">
+        📲 Share CSV (WhatsApp / Gmail)
+        </button>
 
-    st.caption(
-        "On mobile, tap this button → choose WhatsApp, Gmail, Drive, or any other app to share."
+        <script>
+        const csvBase64 = "{b64}";
+        const filename = "{filename}";
+
+        document.getElementById("shareBtn").onclick = async () => {{
+            try {{
+                const blob = new Blob(
+                    [atob(csvBase64)],
+                    {{ type: "text/csv" }}
+                );
+                const file = new File([blob], filename, {{ type: "text/csv" }});
+
+                if (navigator.canShare && navigator.canShare({{ files: [file] }})) {{
+                    await navigator.share({{
+                        files: [file],
+                        title: "Outreach Camp Data",
+                        text: "Sharing camp data CSV"
+                    }});
+                }} else {{
+                    alert("Sharing not supported on this device/browser.");
+                }}
+            }} catch (err) {{
+                alert("Unable to share file.");
+            }}
+        }};
+        </script>
+        """,
+        unsafe_allow_html=True
     )
