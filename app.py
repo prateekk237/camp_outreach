@@ -301,45 +301,53 @@ else:
     csv_data = df.to_csv(index=False)
     b64 = base64.b64encode(csv_data.encode()).decode()
 
-    st.markdown(
+    components.html(
         f"""
-        <button id="shareBtn" style="
-            padding:10px 16px;
-            background:#0f9d58;
-            color:white;
-            border:none;
-            border-radius:6px;
-            font-size:16px;
-        ">
-        📲 Share CSV (WhatsApp / Gmail)
-        </button>
+        <html>
+        <body>
+            <button id="shareBtn"
+                style="
+                    padding:12px 18px;
+                    font-size:16px;
+                    background:#0f9d58;
+                    color:white;
+                    border:none;
+                    border-radius:6px;
+                    cursor:pointer;
+                ">
+                📲 Share CSV (WhatsApp / Gmail)
+            </button>
 
-        <script>
-        const csvBase64 = "{b64}";
-        const filename = "{filename}";
+            <script>
+            const b64 = "{b64}";
+            const filename = "{filename}";
 
-        document.getElementById("shareBtn").onclick = async () => {{
-            try {{
-                const blob = new Blob(
-                    [atob(csvBase64)],
-                    {{ type: "text/csv" }}
-                );
-                const file = new File([blob], filename, {{ type: "text/csv" }});
+            document.getElementById("shareBtn").addEventListener("click", async () => {{
+                try {{
+                    const csv = atob(b64);
+                    const blob = new Blob([csv], {{ type: "text/csv" }});
+                    const file = new File([blob], filename, {{ type: "text/csv" }});
 
-                if (navigator.canShare && navigator.canShare({{ files: [file] }})) {{
-                    await navigator.share({{
-                        files: [file],
-                        title: "Outreach Camp Data",
-                        text: "Sharing camp data CSV"
-                    }});
-                }} else {{
-                    alert("Sharing not supported on this device/browser.");
+                    if (navigator.canShare && navigator.canShare({{ files: [file] }})) {{
+                        await navigator.share({{
+                            files: [file],
+                            title: "Outreach Camp Data",
+                            text: "Sharing outreach camp CSV"
+                        }});
+                    }} else {{
+                        alert("Sharing not supported on this device.");
+                    }}
+                }} catch (e) {{
+                    alert("Error sharing file.");
                 }}
-            }} catch (err) {{
-                alert("Unable to share file.");
-            }}
-        }};
-        </script>
+            });
+            </script>
+        </body>
+        </html>
         """,
-        unsafe_allow_html=True
+        height=80
+    )
+
+    st.caption(
+        "Works on mobile browsers (Chrome / Safari). Desktop browsers may not support file sharing."
     )
