@@ -287,27 +287,25 @@ if st.session_state.last_submission:
 
 # ---------------- ZIP EXPORT ----------------
 st.divider()
-st.subheader("📦 Export Data (CSV + Images)")
+st.subheader("📤 Share Camp Data (CSV)")
 
 df = load_all_entries().drop(columns=["id"], errors="ignore")
 
-if not df.empty:
-    buffer = BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
-        zipf.writestr("outreach_data.csv", df.to_csv(index=False))
-        for img in df["photo_name"].dropna().unique():
-            path = os.path.join(IMAGE_DIR, img)
-            if os.path.exists(path):
-                zipf.write(path, arcname=f"images/{img}")
+if df.empty:
+    st.info("No records available yet.")
+else:
+    safe_place = place.replace(" ", "_") if place else "camp"
+    filename = f"{camp_date}_{safe_place}.csv"
 
-    buffer.seek(0)
-    zip_name = f"{camp_date}_{place.replace(' ', '_')}.zip"
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
 
     st.download_button(
-        "Download ZIP (CSV + Images)",
-        buffer,
-        zip_name,
-        "application/zip"
+        label="📄 Download / Share CSV",
+        data=csv_bytes,
+        file_name=filename,
+        mime="text/csv"
     )
-else:
-    st.info("No records available yet.")
+
+    st.caption(
+        "On mobile, tap this button → choose WhatsApp, Gmail, Drive, or any other app to share."
+    )
